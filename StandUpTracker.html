@@ -8,42 +8,47 @@
 		#input {text-align: center;}
 		#mainGrid { 
 			display: grid;
-			grid-template-columns: 150px 150px 150px;
-			grid-template-rows: 150px 150px;
+			grid-template-columns: 1fr 5fr 1fr;
+			grid-template-rows: 1fr 1fr 2fr 1fr 1fr 6fr 1fr;
 			grid-gap: 1rem;}
 		.delete {background-color: black; color: red;}
-		li {margin-top: 6px;}
-		#peoples {position: relative; float: left; padding: 1em; width: 15em; max-width: 20%; border: 2px solid red; margin: 3px;}
-		#checkOff {position: relative; float: left; padding: 1em; max-width: 80%; border: 2px solid red; margin: 3px;}
-		.active {background-color: lime; color: red; text-align: center; font-size: 40px; padding: 1em; margin: 0.5em;}
-		.inactive {background-color: purple; color: gold; text-align: center; font-size: 40px;padding: 0.75em; margin: 0.75em;}
+		#sideFiller { 
+			grid-row: 1 / 7;
+			grid-column: 3 / 4;
+			}
+		#bottomFiller { 
+			grid-row: 7 / 8;
+			grid-column: 1 / 4;
+			}
+		#checkOff { 
+			grid-row: 1 / 7;
+			grid-column: 2 / 3;
+			display: grid;
+			grid-template-columns: 1fr 10fr 1fr 1fr 10fr 1fr 1fr 10fr 1fr 1fr 10fr 1fr 1fr 10fr 1fr;
+			grid-template-rows: repeat(10, 1fr);
+			grid-column-gap: 0rem;
+			grid-row-gap: 2rem;}
+		.active {background-color: lime; color: red; text-align: center; font-size: 100%;}
+		.inactive {background-color: purple; color: gold; text-align: center; font-size: 100%;}
 	</style>
 	<title>Stand Up Tracker</title>
 </head>
 <body>
 	<h1 id="title">Stand Up Tracker</h1>
 	<div id="mainGrid">	
-		<div id="input">
-			<p>Type name here:<input id="inputName" type="text" onkeypress="onEnter(event)"></p>
-			<input id="inputNameButt" type="button" onclick="addName()" value="Add to List">
-		</div>
-		<div id="peoples">
-			<input type="button" value="Alphabetise" onclick="alphaSort()">
-			<p>People in the Team:</p>
-			<ul id="peepList">	
-			</ul>
-			<input type="button" value="Purge" onclick="destroy()">
-		</div>
-		<input type="button" value="Start Session" onclick="buildSession()">
-		<div id="checkOff">
-			
+		<p>Type name here:<input id="inputName" type="text" onkeypress="onEnter(event)"></p>
+		<input type="button" onclick="addName()" value="Add to List">
+		<div></div>
+		<input type="button" value="Alphabetise" onclick="alphaSort()">
+		<input type="button" value="Purge" onclick="destroy()">
+		<div id="sideFiller"></div>
+		<div id="bottomFiller"></div>
+		<div id="checkOff">	
 		</div>
 	</div>
 	<script type="text/javascript" >	
 	
 	var inputName = document.getElementById("inputName");
-	var submitName = document.getElementById("inputNameButt");
-	var peepList = document.getElementById("peepList");
 	var checkOff = document.getElementById("checkOff");
 	var people = [];
 	
@@ -60,7 +65,7 @@
 			people.push(inputName.value);
 			localStorage.names = JSON.stringify(people);
 			inputName.value = "";
-			makeList();
+			buildSession();
 		}
 	}
 	
@@ -68,7 +73,7 @@
 		remList();
 		people.sort();
 		localStorage.names = JSON.stringify(people);
-		makeList();
+		buildSession();
 	}
 	
 	window.onLoad =	checkStorage();
@@ -76,7 +81,7 @@
 	function checkStorage(){
 		if (localStorage.names){
 			people = JSON.parse(localStorage.getItem("names"));
-			makeList();
+			buildSession();
 		}
 		else {
 			localStorage.names = JSON.stringify(people);
@@ -84,20 +89,14 @@
 	}
 	
 	function remList(){
-		peepList.innerHTML = "";
+		checkOff.innerHTML = ""
 	}
 	
-	function makeList(){
-		for (i=0; i < people.length; i++){
-			peepList.innerHTML += "<li> "+ people[i] +" <input class=\"delete\" type=\"button\" onclick=\"delPerson("+ i +")\" value=\"X\"></li>";
-		}
-	}
-	
-	function delPerson(a){
+	function delPerson(a){ console.log(a);
 		remList();
-		people.splice(a, 1);
+		people.splice(a.target.getAttribute('data-target'), 1);
 		localStorage.names = JSON.stringify(people);
-		makeList();
+		buildSession();
 	}
 	
 	function destroy(){
@@ -106,7 +105,7 @@
 		localStorage.removeItem("names");
 	}
 	
-	function toggleColor(a) {
+	function toggleColor(a) { console.log("toggleColor(" + a + ")");
 		var nameTab = document.getElementById(a).classList;
 		if (nameTab.contains("active")){
 			nameTab.remove("active"); 
@@ -118,12 +117,33 @@
 		}
 	}
 	
-	function buildSession(){
-		checkOff.innerHTML = "";
-		for (i=0; i < people.length; i++){
-			checkOff.innerHTML += "<input type=\"button\" id="+ i +" class=\"active\" onclick=\"toggleColor('"+ i +"')\" value='"+ people[i] +"'>";
-		}
-	}
+function buildSession(){
+        checkOff.innerHTML = "";
+        for (i=0; i < people.length; i++){
+            var del = document.createElement("INPUT");
+            var name = document.createElement("INPUT");
+            var gap = document.createElement("DIV");
+            del.classList.add("delete");
+            del.value = "X";
+            del.type = "button";
+            del.setAttribute('data-target', i);
+            del.addEventListener("click", delPerson);
+            checkOff.appendChild(del);
+            name.classList.add("active");
+            name.value = people[i];
+            name.type = "button";
+            name.addEventListener("click", (function (id) {
+                      return function () { toggleColor(id) }
+				})(i)
+            );
+            name.setAttribute("id", i);
+            checkOff.appendChild(name);
+            checkOff.appendChild(gap);
+            del = null;
+            name = null;
+            gap = null;
+        }
+    }
 	</script>
 </body>
-</html>	
+</html>
